@@ -20,7 +20,7 @@ public class MazeDataGenerator
     }
 
     public MazeCell[,] mazeCells;
-    public MazeStimuli[] mazeStimuli;
+    public List<MazeStimuli> mazeStimuli = new List<MazeStimuli>();
 
     public Vector2Int startCell;
 
@@ -30,9 +30,11 @@ public class MazeDataGenerator
         var splitDimensions = new string[] { "," };
         var splitRow = new string[] { "+" };
 
-        List<string> lines = config.text.Split(splitFile, System.StringSplitOptions.None).ToList();
-        string[] dimensions = lines[0].Split(splitDimensions, System.StringSplitOptions.None);
-        lines.RemoveAt(0);
+        var lineNumber = 0;
+
+        var lines = config.text.Split(splitFile, System.StringSplitOptions.None).ToList();
+        var dimensions = lines[lineNumber].Split(splitDimensions, System.StringSplitOptions.None);
+        lineNumber++;
 
         int.TryParse(dimensions[0], out int sizeCols);
         int.TryParse(dimensions[1], out int sizeRows);
@@ -41,28 +43,33 @@ public class MazeDataGenerator
         int rMax = mazeCells.GetUpperBound(0);
         int cMax = mazeCells.GetUpperBound(1);
 
-        Regex blockMarkerRegex = new Regex(@"^\s*=+\s*$");
-        Regex commentRegex = new Regex(@"^\*.*$");
-        Regex blankRegex = new Regex(@"^\s*$");
+        var blockMarkerRegex = new Regex(@"^\s*=+\s*$");
+        var commentRegex = new Regex(@"^\*.*$");
+        var blankRegex = new Regex(@"^\s*$");
 
-        // Skip to the map block start marker
-        while(!blockMarkerRegex.IsMatch(lines[0]) || commentRegex.IsMatch(lines[0]) || blankRegex.IsMatch(lines[0]))
+        // Skip comments and blank lines
+        while(commentRegex.IsMatch(lines[lineNumber]) || blankRegex.IsMatch(lines[lineNumber]))
         {
-            lines.RemoveAt(0);
+            lineNumber++;
         }
-        lines.RemoveAt(0);
+        if (!blockMarkerRegex.IsMatch(lines[lineNumber]))
+        {
+            Debug.LogErrorFormat("Error: expected block marker at {0}", lineNumber);
+            return;
+        }
+        // Skip the block marker.
+        lineNumber++;
 
         // Extract the map lines.
-        List<string> map = new List<string>();
-        while(!blockMarkerRegex.IsMatch(lines[0]))
+        var map = new List<string>();
+        while(!blockMarkerRegex.IsMatch(lines[lineNumber]))
         {
-            if(!commentRegex.IsMatch(lines[0]) && !blankRegex.IsMatch(lines[0]))
+            if(!commentRegex.IsMatch(lines[lineNumber]) && !blankRegex.IsMatch(lines[lineNumber]))
             {
-                map.Add(lines[0]);
+                map.Add(lines[lineNumber]);
             }
-            lines.RemoveAt(0);
+            lineNumber++;
         }
-        lines.RemoveAt(0);
         if (map.Count < ((sizeRows * 4) + 1))
         {
             Debug.LogErrorFormat("Map doesn't contain enough lines: {0}, {1}", map.Count, rMax);
@@ -70,13 +77,13 @@ public class MazeDataGenerator
         }
 
 
-        for (int i = 2; i <= rMax - 2; i++)
+        for (var i = 2; i <= rMax - 2; i++)
         {
             var mapRow = i - 2; 
             var rowData1 = map[(mapRow * 4)].Trim().Split(splitRow, System.StringSplitOptions.None).Skip(1).Take(sizeCols).ToArray();
             var rowData2 = map[((mapRow + 1) * 4)].Trim().Split(splitRow, System.StringSplitOptions.None).Skip(1).Take(sizeCols).ToArray();
             var colData = map[1 + (mapRow * 4)].Skip(2).ToArray();
-            for (int j = 2; j <= cMax - 2; j++)
+            for (var j = 2; j <= cMax - 2; j++)
             {
                 var mapCol = j - 2;
                 MazeCell cell = new MazeCell();
@@ -104,7 +111,7 @@ public class MazeDataGenerator
         // expanded information to build the boundary.
 
         // East and west sides
-        for (int i = 2; i <= rMax - 2; i++)
+        for (var i = 2; i <= rMax - 2; i++)
         {
             mazeCells[i, 0] = new MazeCell();
             mazeCells[i, cMax] = new MazeCell();
@@ -113,12 +120,12 @@ public class MazeDataGenerator
         }
 
 
-        for (int i = 0; i <= rMax; i++)
+        for (var i = 0; i <= rMax; i++)
         {
             if(i == 0 || i == rMax)
             {
                 // First/last row, empty
-                for (int j = 0; j <= cMax; j++)
+                for (var j = 0; j <= cMax; j++)
                 {
                     mazeCells[i, j] = new MazeCell();
                 }
@@ -126,7 +133,7 @@ public class MazeDataGenerator
             else if(i == 1)
             {
                 // Second row, copy third row south to north
-                for (int j = 0; j <= cMax; j++)
+                for (var j = 0; j <= cMax; j++)
                 {
                     mazeCells[i, j] = new MazeCell() { north = mazeCells[i + 1, j].south };
                 }
@@ -134,33 +141,72 @@ public class MazeDataGenerator
             else if(i == rMax - 1)
             {
                 // Second to last row, copy third to last north to south
-                for(int j = 0; j <= cMax; j++)
+                for(var j = 0; j <= cMax; j++)
                 {
                     mazeCells[i, j] = new MazeCell() { south = mazeCells[i - 1, j].north };
                 }
             }
         }
 
-        while (commentRegex.IsMatch(lines[0]) || blankRegex.IsMatch(lines[0]))
+        // Skip to the stimuli block start marker
+        // Skip comments and blank lines
+        while (commentRegex.IsMatch(lines[lineNumber]) || blankRegex.IsMatch(lines[lineNumber]))
         {
-            lines.RemoveAt(0);
+            lineNumber++;
         }
+        if (!blockMarkerRegex.IsMatch(lines[lineNumber]))
+        {
+            Debug.LogErrorFormat("Error: expected block marker at {0}", lineNumber);
+            return;
+        }
+        // Skip the block marker.
+        lineNumber++;
+
+        // Process stimuli
+        mazeStimuli.Add(
+            new MazeStimuli()
+            {
+                cell = new Vector2Int(2, 3),
+                points = new Vector3[]
+                {
+                    new Vector3(0.2f, 0.2f, 0.95f),
+                    new Vector3(1.8f, 0.2f, 0.95f),
+                    new Vector3(1.8f, 0.8f, 0.95f),
+                    new Vector3(0.2f, 0.8f, 0.95f),
+                }
+            });
+
+
+        // Skip to the data block start marker
+        // Skip comments and blank lines
+        while (commentRegex.IsMatch(lines[lineNumber]) || blankRegex.IsMatch(lines[lineNumber]))
+        {
+            lineNumber++;
+        }
+        if (!blockMarkerRegex.IsMatch(lines[lineNumber]))
+        {
+            Debug.LogErrorFormat("Error: expected block marker at {0}", lineNumber);
+            return;
+        }
+        // Skip the block marker.
+        lineNumber++;
+
 
         Regex startRegex = new Regex(@"^START:\s*(?<x>\d*),(?<y>\d*)");
         // Search for the START command.
-        bool startFound = false;
-        foreach(string line in lines)
+        var startFound = false;
+        while(lineNumber < lines.Count)
         {
-            Match m = startRegex.Match(line);
-            if(m.Success)
+            var m = startRegex.Match(lines[lineNumber]);
+            if (m.Success)
             {
-                startCell = new Vector2Int(int.Parse(m.Groups["x"].Value) + 2, int.Parse(m.Groups["y"].Value) + 2);
+                startCell = new Vector2Int(int.Parse(m.Groups["x"].Value), int.Parse(m.Groups["y"].Value));
                 Debug.LogFormat("Found START command: {0}", startCell);
                 startFound = true;
             }
-            break;
+            lineNumber++;
         }
-        if(!startFound)
+        if (!startFound)
         {
             Debug.LogError("START command not found");
         }

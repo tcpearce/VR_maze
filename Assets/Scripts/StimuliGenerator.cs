@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-public class StimuliGenerator : MonoBehaviour
+public class StimuliGenerator
 {
     public float width;
     public float height;
@@ -16,20 +16,24 @@ public class StimuliGenerator : MonoBehaviour
 
     public Mesh AddStimuli(MazeDataGenerator.MazeStimuli stimuli)
     {
-        Mesh stimulus = new Mesh();
+        var stimulus = new Mesh();
 
-        List<Vector3> newVertices = new List<Vector3>();
-        List<Vector2> newUVs = new List<Vector2>();
+        var newVertices = new List<Vector3>();
+        var newUVs = new List<Vector2>();
 
         stimulus.subMeshCount = 1;
-        List<int> triangles = new List<int>();
+        var triangles = new List<int>();
 
-        Vector3 origin = new Vector3(2.0f * (width + wallThickness) + (wallThickness * 0.5f), height * 0.5f, 0.0f);
-        //AddQuad(Matrix4x4.TRS(
-        //    origin + Vector3.right * ((width + wallThickness) * 0.5f) + Vector3.forward * 0.01f,
-        //    Quaternion.LookRotation(Vector3.forward),
-        //    new Vector3(width, height, 1f)
-        //), ref newVertices, ref newUVs, ref triangles);
+        var offset = new Vector3((float)(stimuli.cell.x - 1), 0, (float)(stimuli.cell.y - 1));
+        var scale = new Vector3(width, height, width);
+        var verts = new List<Vector3>();
+        foreach(var vert in stimuli.points)
+        {
+            var v = vert + offset;
+            v.Scale(scale);
+            verts.Add(v);
+        }
+        AddQuad(verts, ref newVertices, ref newUVs, ref triangles);
 
         stimulus.vertices = newVertices.ToArray();
         stimulus.uv = newUVs.ToArray();
@@ -40,15 +44,15 @@ public class StimuliGenerator : MonoBehaviour
 
         return stimulus;
     }
-    
-    private void AddQuad(Vector3 origin, Vector3 cellSize, List<Vector3> verts, ref List<Vector3> newVertices,
-        ref List<Vector2> newUVs, ref List<int> newTriangles)
-    {
-        int index = newVertices.Count;
 
-        foreach(Vector3 vert in verts)
-        {   
-            //newVertices.Add(vert1 * cellSize + origin);
+    private void AddQuad(List<Vector3> verts, ref List<Vector3> newVertices,
+    ref List<Vector2> newUVs, ref List<int> newTriangles)
+    {
+        var index = newVertices.Count;
+
+        foreach (var vert in verts)
+        {
+            newVertices.Add(vert);
         }
 
         newUVs.Add(new Vector2(1, 0));
@@ -64,5 +68,4 @@ public class StimuliGenerator : MonoBehaviour
         newTriangles.Add(index + 2);
         newTriangles.Add(index);
     }
-
 }

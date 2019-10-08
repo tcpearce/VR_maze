@@ -13,14 +13,11 @@ public class MazeConstructor : MonoBehaviour
     [SerializeField] private Material cornerMaterial;
     [SerializeField] private Material vstMaterial;
 
-    [SerializeField] private Material startMat;
-    [SerializeField] private Material treasureMat;
-
-    public float hallWidth
+    public float cellWidth
     {
         get; private set;
     }
-    public float hallHeight
+    public float cellHeight
     {
         get; private set;
     }
@@ -38,7 +35,7 @@ public class MazeConstructor : MonoBehaviour
     {
         dataGenerator = new MazeDataGenerator();
         meshGenerator = new MazeMeshGenerator();
-        //stimuliGenerator = new StimuliGenerator();
+        stimuliGenerator = new StimuliGenerator();
     }
 
     public void GenerateNewMaze(TextAsset config)
@@ -48,48 +45,50 @@ public class MazeConstructor : MonoBehaviour
         dataGenerator.LoadFromFile(config);
 
         // store values used to generate this mesh
-        hallWidth = meshGenerator.width;
-        hallHeight = meshGenerator.height;
+        cellWidth = meshGenerator.width;
+        cellHeight = meshGenerator.height;
 
         DisplayMaze();
     }
 
     private void DisplayMaze()
     {
-        GameObject go = new GameObject();
+        var go = new GameObject();
         go.transform.position = Vector3.zero;
         go.name = "Procedural Maze";
         go.tag = "Generated";
 
         // Generate maze mesh and setup GameObject and necessary components.
-        MeshFilter mf = go.AddComponent<MeshFilter>();
+        var mf = go.AddComponent<MeshFilter>();
         mf.mesh = meshGenerator.FromData(dataGenerator.mazeCells);
 
-        MeshCollider mc = go.AddComponent<MeshCollider>();
+        var mc = go.AddComponent<MeshCollider>();
         mc.sharedMesh = mf.mesh;
 
-        MeshRenderer mr = go.AddComponent<MeshRenderer>();
+        var mr = go.AddComponent<MeshRenderer>();
         mr.materials = new Material[7] { floorMaterial, ceilingMaterial, northMaterial, southMaterial, eastMaterial, westMaterial, cornerMaterial };
 
+        foreach (var stimulus in dataGenerator.mazeStimuli)
+        {
+            var stimulusGO = new GameObject();
+            stimulusGO.transform.position = Vector3.zero;
+            stimulusGO.name = "Stimuli";
+            stimulusGO.tag = "Generated";
+            stimulusGO.layer = LayerMask.NameToLayer("Stimuli");
 
-        //GameObject temp = new GameObject();
-        //temp.transform.position = Vector3.zero;
-        //temp.name = "Test Stimuli";
-        //temp.tag = "Generated";
+            // Generate test stimuli mesh and setup GameObject and necessary components.
+            var smf = stimulusGO.AddComponent<MeshFilter>();
+            smf.mesh = stimuliGenerator.AddStimuli(stimulus);
 
-        // Generate test stimuli mesh and setup GameObject and necessary components.
-        //MeshFilter smf = temp.AddComponent<MeshFilter>();
-        //smf.mesh = stimuliGenerator.AddStimuli(null);
-
-        //MeshRenderer smr = temp.AddComponent<MeshRenderer>();
-        //smr.materials = new Material[1] { vstMaterial };
-
+            var smr = stimulusGO.AddComponent<MeshRenderer>();
+            smr.materials = new Material[1] { vstMaterial };
+        }
     }
 
     public void DisposeOldMaze()
     {
-        GameObject[] objects = GameObject.FindGameObjectsWithTag("Generated");
-        foreach (GameObject go in objects)
+        var objects = GameObject.FindGameObjectsWithTag("Generated");
+        foreach (var go in objects)
         {
             Destroy(go);
         }
