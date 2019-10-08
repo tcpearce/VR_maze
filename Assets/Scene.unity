@@ -410,8 +410,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   player: {fileID: 1773131083}
-  timeLabel: {fileID: 0}
-  scoreLabel: {fileID: 0}
   config: {fileID: 4900000, guid: 186cc1b504be949a5b10d9e1a085f352, type: 3}
 --- !u!114 &1625808758
 MonoBehaviour:
@@ -433,8 +431,9 @@ MonoBehaviour:
   eastMaterial: {fileID: 2100000, guid: e5ae1d915a6fd460ca3487bb61f669d0, type: 2}
   westMaterial: {fileID: 2100000, guid: e5ae1d915a6fd460ca3487bb61f669d0, type: 2}
   cornerMaterial: {fileID: 2100000, guid: e5ae1d915a6fd460ca3487bb61f669d0, type: 2}
-  startMat: {fileID: 2100000, guid: c8296ee06001c4d39b0f615626264b85, type: 2}
-  treasureMat: {fileID: 2100000, guid: c5b8154923bae4fedbbb1f1aca66fd98, type: 2}
+  vstMaterial: {fileID: 2100000, guid: df0ee7cd11de1466194c2ee2f0406648, type: 2}
+  startMat: {fileID: 0}
+  treasureMat: {fileID: 0}
 --- !u!4 &1625808759
 Transform:
   m_ObjectHideFlags: 0

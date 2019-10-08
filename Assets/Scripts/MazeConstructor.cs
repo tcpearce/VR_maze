@@ -11,6 +11,7 @@ public class MazeConstructor : MonoBehaviour
     [SerializeField] private Material eastMaterial;
     [SerializeField] private Material westMaterial;
     [SerializeField] private Material cornerMaterial;
+    [SerializeField] private Material vstMaterial;
 
     [SerializeField] private Material startMat;
     [SerializeField] private Material treasureMat;
@@ -31,11 +32,13 @@ public class MazeConstructor : MonoBehaviour
 
     private MazeDataGenerator dataGenerator;
     private MazeMeshGenerator meshGenerator;
+    private StimuliGenerator stimuliGenerator;
 
     void Awake()
     {
         dataGenerator = new MazeDataGenerator();
         meshGenerator = new MazeMeshGenerator();
+        //stimuliGenerator = new StimuliGenerator();
     }
 
     public void GenerateNewMaze(TextAsset config)
@@ -58,6 +61,7 @@ public class MazeConstructor : MonoBehaviour
         go.name = "Procedural Maze";
         go.tag = "Generated";
 
+        // Generate maze mesh and setup GameObject and necessary components.
         MeshFilter mf = go.AddComponent<MeshFilter>();
         mf.mesh = meshGenerator.FromData(dataGenerator.mazeCells);
 
@@ -66,6 +70,20 @@ public class MazeConstructor : MonoBehaviour
 
         MeshRenderer mr = go.AddComponent<MeshRenderer>();
         mr.materials = new Material[7] { floorMaterial, ceilingMaterial, northMaterial, southMaterial, eastMaterial, westMaterial, cornerMaterial };
+
+
+        //GameObject temp = new GameObject();
+        //temp.transform.position = Vector3.zero;
+        //temp.name = "Test Stimuli";
+        //temp.tag = "Generated";
+
+        // Generate test stimuli mesh and setup GameObject and necessary components.
+        //MeshFilter smf = temp.AddComponent<MeshFilter>();
+        //smf.mesh = stimuliGenerator.AddStimuli(null);
+
+        //MeshRenderer smr = temp.AddComponent<MeshRenderer>();
+        //smr.materials = new Material[1] { vstMaterial };
+
     }
 
     public void DisposeOldMaze()

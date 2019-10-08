@@ -5,43 +5,12 @@ public class MazeMeshGenerator
 {
     public float width;
     public float height;
-    public float wallThickness = 0.2f;
+    public float wallThickness = 0.1f;
 
     public MazeMeshGenerator()
     {
         width = 2.0f;
         height = 3.0f;
-    }
-
-    private void WallSegment(Vector3 origin, float segmentWidth, float segmentDepth, ref List<Vector3> verts, ref List<Vector2> uvs, ref List<int> tris)
-    {
-        // N
-        AddQuad(Matrix4x4.TRS(
-            origin + Vector3.right * (segmentWidth * 0.5f),
-            Quaternion.LookRotation(Vector3.back),
-            new Vector3(segmentWidth, height, 1f)
-        ), ref verts, ref uvs, ref tris);
-
-        // E
-        AddQuad(Matrix4x4.TRS(
-            origin + Vector3.right * segmentWidth + Vector3.forward * (segmentDepth * 0.5f),
-            Quaternion.LookRotation(Vector3.right),
-            new Vector3(segmentDepth, height, 1f)
-        ), ref verts, ref uvs, ref tris);
-
-        // S
-        AddQuad(Matrix4x4.TRS(
-            origin + Vector3.right * (segmentWidth * 0.5f) + Vector3.forward * segmentDepth,
-            Quaternion.LookRotation(Vector3.forward),
-            new Vector3(segmentWidth, height, 1f)
-        ), ref verts, ref uvs, ref tris);
-
-        // W
-        AddQuad(Matrix4x4.TRS(
-            origin + Vector3.forward * (segmentDepth * 0.5f),
-            Quaternion.LookRotation(Vector3.left),
-            new Vector3(segmentDepth, height, 1f)
-        ), ref verts, ref uvs, ref tris);
     }
 
     public Mesh FromData(MazeDataGenerator.MazeCell[,] data)
@@ -62,87 +31,164 @@ public class MazeMeshGenerator
 
         int rMax = data.GetUpperBound(0);
         int cMax = data.GetUpperBound(1);
-        float halfH = height * .5f;
-        float cellWidth = width + wallThickness;
-        float halfCellWidth = cellWidth * 0.5f;
+        float cellWidth = width;
+        float halfWallWidth = (width * wallThickness) / 2.0f;
 
-        for (int i = 0; i <= rMax; i++)
+        for (int i = 1; i < rMax; i++)
         {
-            for (int j = 0; j <= cMax; j++)
+            var originY = i * cellWidth;
+            var southY = originY + halfWallWidth;
+            var northY = originY + (cellWidth - halfWallWidth);
+
+            for (int j = 1; j < cMax; j++)
             {
-                // Floor
-                AddQuad(Matrix4x4.TRS(
-                    new Vector3(j * cellWidth + halfCellWidth, 0, i * cellWidth + halfCellWidth),
-                    Quaternion.LookRotation(Vector3.up),
-                    new Vector3(cellWidth, cellWidth, 1)
-                ), ref newVertices, ref newUVs, ref floorTriangles);
+                var originX = j * cellWidth;
+                var westX = originX + halfWallWidth;
+                var eastX = originX + (cellWidth - halfWallWidth);
 
-                // Ceiling
-                AddQuad(Matrix4x4.TRS(
-                    new Vector3(j * cellWidth + halfCellWidth, height, i * cellWidth + halfCellWidth),
-                    Quaternion.LookRotation(Vector3.down),
-                    new Vector3(cellWidth, cellWidth, 1)
-                ), ref newVertices, ref newUVs, ref ceilingTriangles);
-
+                // Get the neighbourhood
                 MazeDataGenerator.MazeCell cell = data[i, j];
+                MazeDataGenerator.MazeCell southBound = data[i - 1, j];
+                MazeDataGenerator.MazeCell westBound = data[i, j - 1];
+                MazeDataGenerator.MazeCell eastBound = data[i, j + 1];
+                MazeDataGenerator.MazeCell northBound = data[i + 1, j];
 
-                // Corner piece
-                if (cell.south != 0 || cell.west != 0 || (i > 0 && data[i - 1, j].east != 0) || (j > 0 && data[i, j-1].south != 0))
+                // Build the main wall sections if needed.
+                if (cell.north != 0)
                 {
-                    Vector3 posCorner = new Vector3(j * cellWidth, halfH, i * cellWidth);
-                    WallSegment(posCorner, wallThickness, wallThickness, ref newVertices, ref newUVs, ref cornerTriangles);
+                    // Build north wall
+                    AddQuad(new List<Vector3>() {
+                        new Vector3(originX, 0f, northY),
+                        new Vector3(originX + cellWidth, 0f, northY),
+                        new Vector3(originX + cellWidth, height, northY),
+                        new Vector3(originX, height, northY)
+                    },
+                    ref newVertices, ref newUVs, ref northWallTriangles);
                 }
 
-                // South piece
                 if (cell.south != 0)
                 {
-                    Vector3 posSouth = new Vector3(j * cellWidth + wallThickness, halfH, i * cellWidth);
-                    WallSegment(posSouth, width, wallThickness, ref newVertices, ref newUVs, ref southWallTriangles);
+                    // Build south wall
+                    AddQuad(new List<Vector3>() {
+                        new Vector3(originX, 0f, southY),
+                        new Vector3(originX, height, southY),
+                        new Vector3(originX + cellWidth, height, southY),
+                        new Vector3(originX + cellWidth, 0f, southY)
+                    },
+                    ref newVertices, ref newUVs, ref southWallTriangles);
                 }
 
-                // West piece
+                if (cell.east != 0)
+                {
+                    // Build east wall
+                    AddQuad(new List<Vector3>() {
+                        new Vector3(eastX, 0f, originY),
+                        new Vector3(eastX, height, originY),
+                        new Vector3(eastX, height, originY + cellWidth),
+                        new Vector3(eastX, 0f, originY + cellWidth)
+                    },
+                    ref newVertices, ref newUVs, ref eastWallTriangles);
+                }
+
                 if (cell.west != 0)
                 {
-                    Vector3 posWest = new Vector3(j * (width + wallThickness), halfH, i * (width + wallThickness) + wallThickness);
-                    WallSegment(posWest, wallThickness, width, ref newVertices, ref newUVs, ref westWallTriangles);
+                    // Build west wall
+                    AddQuad(new List<Vector3>() {
+                        new Vector3(westX, 0f, originY),
+                        new Vector3(westX, 0f, originY + cellWidth),
+                        new Vector3(westX, height, originY + cellWidth),
+                        new Vector3(westX, height, originY)
+                    },
+                    ref newVertices, ref newUVs, ref eastWallTriangles);
                 }
 
-
-                // Last row
-                if (i == rMax)
+                // Build the corner in-fills where necessary.
+                // north-west
+                if(cell.north == 0 && cell.west == 0 && (northBound.west != 0 || westBound.north != 0))
                 {
-                    // Corner piece
-                    if (cell.south != 0 || cell.west != 0 || (i > 0 && data[i - 1, j].east != 0) || (j > 0 && data[i, j - 1].south != 0))
-                    {
-                        Vector3 posCorner = new Vector3(j * cellWidth, halfH, (i + 1) * cellWidth);
-                        WallSegment(posCorner, wallThickness, wallThickness, ref newVertices, ref newUVs, ref cornerTriangles);
-                    }
+                    // Build north wall in-fill
+                    AddQuad(new List<Vector3>() {
+                        new Vector3(originX, 0f, northY),
+                        new Vector3(originX + halfWallWidth, 0f, northY),
+                        new Vector3(originX + halfWallWidth, height, northY),
+                        new Vector3(originX, height, northY)
+                    },
+                    ref newVertices, ref newUVs, ref northWallTriangles);
 
-                    // North piece
-                    if (cell.north != 0)
-                    {
-                        Vector3 posSouth = new Vector3(j * cellWidth + wallThickness, halfH, (i + 1) * cellWidth);
-                        WallSegment(posSouth, width, wallThickness, ref newVertices, ref newUVs, ref northWallTriangles);
-                    }
-
+                    // Build west wall in-fill
+                    AddQuad(new List<Vector3>() {
+                        new Vector3(westX, 0f, originY + (cellWidth - halfWallWidth)),
+                        new Vector3(westX, 0f, originY + cellWidth),
+                        new Vector3(westX, height, originY + cellWidth),
+                        new Vector3(westX, height, originY + (cellWidth - halfWallWidth))
+                    },
+                    ref newVertices, ref newUVs, ref eastWallTriangles);
                 }
 
-                // Last column
-                if (j == cMax)
+                // north-east
+                if(cell.north == 0 && cell.east == 0 && (northBound.east != 0 || eastBound.north != 0))
                 {
-                    // Corner piece
-                    if (cell.north != 0 || cell.east != 0 || (i > 0 && data[i - 1, j].east != 0))
-                    {
-                        Vector3 posCorner = new Vector3((j + 1) * cellWidth, halfH, i * cellWidth);
-                        WallSegment(posCorner, wallThickness, wallThickness, ref newVertices, ref newUVs, ref cornerTriangles);
-                    }
+                    // Build north wall in-fill
+                    AddQuad(new List<Vector3>() {
+                        new Vector3(originX + (cellWidth - halfWallWidth), 0f, northY),
+                        new Vector3(originX + cellWidth, 0f, northY),
+                        new Vector3(originX + cellWidth, height, northY),
+                        new Vector3(originX + (cellWidth - halfWallWidth), height, northY)
+                    },
+                    ref newVertices, ref newUVs, ref northWallTriangles);
 
-                    // East piece
-                    if (cell.east != 0)
-                    {
-                        Vector3 posEast = new Vector3((j + 1) * cellWidth, halfH, i * cellWidth + wallThickness);
-                        WallSegment(posEast, wallThickness, width, ref newVertices, ref newUVs, ref eastWallTriangles);
-                    }
+                    // Build east wall in-fill
+                    AddQuad(new List<Vector3>() {
+                        new Vector3(eastX, 0f, originY + (cellWidth - halfWallWidth)),
+                        new Vector3(eastX, height, originY + (cellWidth - halfWallWidth)),
+                        new Vector3(eastX, height, originY + cellWidth),
+                        new Vector3(eastX, 0f, originY + cellWidth)
+                    },
+                    ref newVertices, ref newUVs, ref eastWallTriangles);
+                }
+
+                // south-east
+                if(cell.south == 0 && cell.east == 0 && (eastBound.south != 0 || southBound.east != 0))
+                {
+                    // Build south wall in-fill
+                    AddQuad(new List<Vector3>() {
+                        new Vector3(originX + (cellWidth - halfWallWidth), 0f, southY),
+                        new Vector3(originX + (cellWidth - halfWallWidth), height, southY),
+                        new Vector3(originX + cellWidth, height, southY),
+                        new Vector3(originX + cellWidth, 0f, southY)
+                    },
+                    ref newVertices, ref newUVs, ref southWallTriangles);
+
+                    // Build east wall in-fill
+                    AddQuad(new List<Vector3>() {
+                        new Vector3(eastX, 0f, originY),
+                        new Vector3(eastX, height, originY),
+                        new Vector3(eastX, height, originY + halfWallWidth),
+                        new Vector3(eastX, 0f, originY + halfWallWidth)
+                    },
+                    ref newVertices, ref newUVs, ref eastWallTriangles);
+                }
+
+                // south-west
+                if(cell.south == 0 && cell.west == 0 && (westBound.south != 0 || southBound.west != 0))
+                {
+                    // Build south wall in-fill
+                    AddQuad(new List<Vector3>() {
+                        new Vector3(originX, 0f, southY),
+                        new Vector3(originX, height, southY),
+                        new Vector3(originX + halfWallWidth, height, southY),
+                        new Vector3(originX + halfWallWidth, 0f, southY)
+                    },
+                    ref newVertices, ref newUVs, ref southWallTriangles);
+
+                    // Build west wall in-fill
+                    AddQuad(new List<Vector3>() {
+                        new Vector3(westX, 0f, originY),
+                        new Vector3(westX, 0f, originY + halfWallWidth),
+                        new Vector3(westX, height, originY + halfWallWidth),
+                        new Vector3(westX, height, originY)
+                    },
+                    ref newVertices, ref newUVs, ref eastWallTriangles);
                 }
             }
         }
@@ -163,20 +209,15 @@ public class MazeMeshGenerator
         return maze;
     }
 
-    private void AddQuad(Matrix4x4 matrix, ref List<Vector3> newVertices,
-        ref List<Vector2> newUVs, ref List<int> newTriangles)
+    private void AddQuad(List<Vector3> verts, ref List<Vector3> newVertices,
+    ref List<Vector2> newUVs, ref List<int> newTriangles)
     {
         int index = newVertices.Count;
 
-        Vector3 vert1 = new Vector3(-.5f, -.5f, 0);
-        Vector3 vert2 = new Vector3(-.5f, .5f, 0);
-        Vector3 vert3 = new Vector3(.5f, .5f, 0);
-        Vector3 vert4 = new Vector3(.5f, -.5f, 0);
-
-        newVertices.Add(matrix.MultiplyPoint3x4(vert1));
-        newVertices.Add(matrix.MultiplyPoint3x4(vert2));
-        newVertices.Add(matrix.MultiplyPoint3x4(vert3));
-        newVertices.Add(matrix.MultiplyPoint3x4(vert4));
+        foreach (Vector3 vert in verts)
+        {
+            newVertices.Add(vert);
+        }
 
         newUVs.Add(new Vector2(1, 0));
         newUVs.Add(new Vector2(1, 1));
@@ -191,4 +232,5 @@ public class MazeMeshGenerator
         newTriangles.Add(index + 2);
         newTriangles.Add(index);
     }
+
 }

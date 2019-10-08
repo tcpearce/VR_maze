@@ -26,9 +26,9 @@ public class GameController : MonoBehaviour
     {
         generator.GenerateNewMaze(config);
 
-        float x = generator.StartCell.x * generator.hallWidth;
+        float x = (generator.StartCell.x - 1) * generator.hallWidth + generator.hallWidth / 2.0f;
         float y = 1;
-        float z = generator.StartCell.y * generator.hallWidth;
+        float z = (generator.StartCell.y - 1) * generator.hallWidth + generator.hallWidth / 2.0f;
         player.transform.position = new Vector3(x, y, z);
 
         player.enabled = true;
