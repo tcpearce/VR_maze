@@ -49,6 +49,29 @@ public class MazeMeshGenerator
                 var westX = cellOriginX + halfWallWidth;
                 var eastX = cellOriginX + (cellWidth - halfWallWidth);
 
+                // Add the floor
+                AddQuad(new List<Vector3>()
+                {
+                    new Vector3(cellOriginX, 0f, cellOriginY),
+                    new Vector3(cellOriginX + cellWidth, 0f, cellOriginY),
+                    new Vector3(cellOriginX + cellWidth, 0f, cellOriginY + cellWidth),
+                    new Vector3(cellOriginX, 0f, cellOriginY + cellWidth),
+                },
+                ref newVertices, ref newUVs, ref floorTriangles);
+
+                if(i > 1 && j > 1 && i < (rMax - 1) && j < (cMax - 1))
+                {
+                    // Add the ceiling
+                    AddQuad(new List<Vector3>()
+                    {
+                        new Vector3(cellOriginX, height, cellOriginY),
+                        new Vector3(cellOriginX, height, cellOriginY + cellWidth),
+                        new Vector3(cellOriginX + cellWidth, height, cellOriginY + cellWidth),
+                        new Vector3(cellOriginX + cellWidth, height, cellOriginY),
+                    },
+                    ref newVertices, ref newUVs, ref ceilingTriangles);
+                }
+
                 // Get the neighbourhood
                 MazeDataGenerator.MazeCell cell = data[i, j];
                 MazeDataGenerator.MazeCell southBound = data[i - 1, j];
