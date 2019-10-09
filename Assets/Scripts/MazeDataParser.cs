@@ -29,6 +29,16 @@ public class MazeDataParser : MonoBehaviour
         public Vector2Int start;
     }
 
+    [Serializable]
+    public class MazeMapConfig
+    {
+        public int width;
+        public int height;
+        public float cellWidth;
+        public float cellHeight;
+        public float wallFraction;
+    }
+
     public MazeCell[,] mazeCells;
     [NonSerialized]
     public List<MazeStimuli> mazeStimuli = new List<MazeStimuli>();
@@ -39,38 +49,42 @@ public class MazeDataParser : MonoBehaviour
     public void LoadFromFile(TextAsset config)
     {
         var splitFile = new string[] { "\r\n", "\r", "\n" };
-        var splitDimensions = new string[] { "," };
         var splitRow = new string[] { "+" };
+        var blockMarkerRegex = new Regex(@"^\s*=+\s*$");
+        var commentRegex = new Regex(@"^\*.*$");
+        var blankRegex = new Regex(@"^\s*$");
 
         var lineNumber = 0;
 
         var lines = config.text.Split(splitFile, System.StringSplitOptions.None).ToList();
-        var dimensions = lines[lineNumber].Split(splitDimensions, System.StringSplitOptions.None);
-        lineNumber++;
 
-        int.TryParse(dimensions[0], out int sizeCols);
-        int.TryParse(dimensions[1], out int sizeRows);
+        // Skip comments and blank lines
+        while (commentRegex.IsMatch(lines[lineNumber]) || blankRegex.IsMatch(lines[lineNumber]))
+        {
+            lineNumber++;
+        }
+
+        // Process the config section
+        var mapConfigLines = new List<string>();
+        while (!blockMarkerRegex.IsMatch(lines[lineNumber]))
+        {
+            mapConfigLines.Add(lines[lineNumber++]);
+        }
+        lineNumber++;
+        var mapConfig = JsonUtility.FromJson<MazeMapConfig>(string.Join("\n", mapConfigLines));
+        int sizeCols = mapConfig.width;
+        int sizeRows = mapConfig.height;
+
 
         mazeCells = new MazeCell[sizeRows + 4, sizeCols + 4];
         int rMax = mazeCells.GetUpperBound(0);
         int cMax = mazeCells.GetUpperBound(1);
-
-        var blockMarkerRegex = new Regex(@"^\s*=+\s*$");
-        var commentRegex = new Regex(@"^\*.*$");
-        var blankRegex = new Regex(@"^\s*$");
 
         // Skip comments and blank lines
         while(commentRegex.IsMatch(lines[lineNumber]) || blankRegex.IsMatch(lines[lineNumber]))
         {
             lineNumber++;
         }
-        if (!blockMarkerRegex.IsMatch(lines[lineNumber]))
-        {
-            Debug.LogErrorFormat("Error: expected block marker at {0}", lineNumber);
-            return;
-        }
-        // Skip the block marker.
-        lineNumber++;
 
         // Extract the map lines.
         var map = new List<string>();

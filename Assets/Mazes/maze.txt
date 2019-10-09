@@ -1,4 +1,13 @@
-﻿ 11,11
+﻿* Maze map configuration
+
+{
+    "width": 11,
+    "height": 11,
+    "cellWidth": 2.0,
+    "cellHeight": 3.0,
+    "wallFraction": 0.1
+}
+
  
  ===
 
