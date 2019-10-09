@@ -1,11 +1,14 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
-public class StimuliGenerator
+public class StimuliGenerator : MonoBehaviour
 {
     public float width;
     public float height;
     public float wallThickness = 0.2f;
+
+    public Material vstMaterial;
 
     public StimuliGenerator()
     {
@@ -14,14 +17,20 @@ public class StimuliGenerator
     }
 
 
-    public Mesh AddStimuli(MazeDataGenerator.MazeStimuli stimuli)
+    public GameObject AddStimuli(MazeDataParser.MazeStimuli stimuli)
     {
-        var stimulus = new Mesh();
+        var stimulusGO = new GameObject();
+        stimulusGO.transform.position = Vector3.zero;
+        stimulusGO.name = "Stimuli";
+        stimulusGO.tag = "Generated";
+        stimulusGO.layer = LayerMask.NameToLayer("Stimuli");
+        var stimulusMesh = new Mesh();
 
+        // Generate test stimuli mesh and setup GameObject and necessary components.
         var newVertices = new List<Vector3>();
         var newUVs = new List<Vector2>();
 
-        stimulus.subMeshCount = 1;
+        stimulusMesh.subMeshCount = 1;
         var triangles = new List<int>();
 
         var offset = new Vector3((float)(stimuli.cell.x - 1), 0, (float)(stimuli.cell.y - 1));
@@ -35,14 +44,24 @@ public class StimuliGenerator
         }
         AddQuad(verts, ref newVertices, ref newUVs, ref triangles);
 
-        stimulus.vertices = newVertices.ToArray();
-        stimulus.uv = newUVs.ToArray();
+        stimulusMesh.vertices = newVertices.ToArray();
+        stimulusMesh.uv = newUVs.ToArray();
 
-        stimulus.SetTriangles(triangles.ToArray(), 0);
+        stimulusMesh.SetTriangles(triangles.ToArray(), 0);
+        stimulusMesh.RecalculateNormals();
 
-        stimulus.RecalculateNormals();
+        var smf = stimulusGO.AddComponent<MeshFilter>();
+        smf.mesh = stimulusMesh;
 
-        return stimulus;
+        var smr = stimulusGO.AddComponent<MeshRenderer>();
+        smr.materials = new Material[1] { vstMaterial };
+
+        Addressables.LoadAssetAsync<Texture2D>(stimuli.VSTName).Completed += (result) =>
+        {
+            smr.materials[0].mainTexture = result.Result;
+        };
+
+        return stimulusGO;
     }
 
     private void AddQuad(List<Vector3> verts, ref List<Vector3> newVertices,

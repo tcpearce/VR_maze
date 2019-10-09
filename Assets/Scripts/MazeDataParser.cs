@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
-public class MazeDataGenerator
+public class MazeDataParser : MonoBehaviour
 {
     public class MazeCell
     {
@@ -13,15 +14,26 @@ public class MazeDataGenerator
         public int west;
     }
 
+    [Serializable]
     public class MazeStimuli
     {
+        public string type;
         public Vector2Int cell;
         public Vector3[] points;
+        public string VSTName;
+    }
+
+    [Serializable]
+    public class MazeConfig
+    {
+        public Vector2Int start;
     }
 
     public MazeCell[,] mazeCells;
+    [NonSerialized]
     public List<MazeStimuli> mazeStimuli = new List<MazeStimuli>();
 
+    [NonSerialized]
     public Vector2Int startCell;
 
     public void LoadFromFile(TextAsset config)
@@ -163,52 +175,37 @@ public class MazeDataGenerator
         lineNumber++;
 
         // Process stimuli
-        mazeStimuli.Add(
-            new MazeStimuli()
-            {
-                cell = new Vector2Int(2, 3),
-                points = new Vector3[]
-                {
-                    new Vector3(0.2f, 0.2f, 0.95f),
-                    new Vector3(1.8f, 0.2f, 0.95f),
-                    new Vector3(1.8f, 0.8f, 0.95f),
-                    new Vector3(0.2f, 0.8f, 0.95f),
-                }
-            });
 
-
-        // Skip to the data block start marker
         // Skip comments and blank lines
         while (commentRegex.IsMatch(lines[lineNumber]) || blankRegex.IsMatch(lines[lineNumber]))
         {
             lineNumber++;
         }
-        if (!blockMarkerRegex.IsMatch(lines[lineNumber]))
+        var stimuli = new List<string>();
+        while(!blockMarkerRegex.IsMatch(lines[lineNumber]))
         {
-            Debug.LogErrorFormat("Error: expected block marker at {0}", lineNumber);
-            return;
+            stimuli.Add(lines[lineNumber++]);
         }
-        // Skip the block marker.
         lineNumber++;
-
-
-        Regex startRegex = new Regex(@"^START:\s*(?<x>\d*),(?<y>\d*)");
-        // Search for the START command.
-        var startFound = false;
-        while(lineNumber < lines.Count)
+        MazeStimuli[] stimuli_JSON = JsonHelper.FromJson<MazeStimuli>(string.Join("\n", stimuli));
+        foreach(var s in stimuli_JSON)
         {
-            var m = startRegex.Match(lines[lineNumber]);
-            if (m.Success)
-            {
-                startCell = new Vector2Int(int.Parse(m.Groups["x"].Value), int.Parse(m.Groups["y"].Value));
-                Debug.LogFormat("Found START command: {0}", startCell);
-                startFound = true;
-            }
+            mazeStimuli.Add(s);
+        }
+
+        // Skip comments and blank lines
+        while (commentRegex.IsMatch(lines[lineNumber]) || blankRegex.IsMatch(lines[lineNumber]))
+        {
             lineNumber++;
         }
-        if (!startFound)
+
+        // Process the config section
+        var configData = new List<string>();
+        while (!blockMarkerRegex.IsMatch(lines[lineNumber]))
         {
-            Debug.LogError("START command not found");
+            configData.Add(lines[lineNumber++]);
         }
+        var mazeConfig = JsonUtility.FromJson<MazeConfig>(string.Join("\n", configData));
+        startCell = mazeConfig.start;
     }
 }

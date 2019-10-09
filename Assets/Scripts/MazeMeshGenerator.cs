@@ -1,22 +1,28 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-public class MazeMeshGenerator
+public class MazeMeshGenerator : MonoBehaviour
 {
-    public float width;
-    public float height;
+    public float width = 2.0f;
+    public float height = 3.0f;
     public float wallThickness = 0.1f;
+    public Material floorMaterial;
+    public Material ceilingMaterial;
+    public Material northMaterial;
+    public Material southMaterial;
+    public Material eastMaterial;
+    public Material westMaterial;
+    public Material cornerMaterial;
 
-    public MazeMeshGenerator()
+    public GameObject FromData(MazeDataParser.MazeCell[,] data)
     {
-        width = 2.0f;
-        height = 3.0f;
-    }
-
-    public Mesh FromData(MazeDataGenerator.MazeCell[,] data)
-    {
+        var go = new GameObject();
+        go.transform.position = Vector3.zero;
+        go.name = "Procedural Maze";
+        go.tag = "Generated";
         var maze = new Mesh();
 
+        // Generate maze mesh and setup GameObject and necessary components.
         var newVertices = new List<Vector3>();
         var newUVs = new List<Vector2>();
 
@@ -73,11 +79,11 @@ public class MazeMeshGenerator
                 }
 
                 // Get the neighbourhood
-                MazeDataGenerator.MazeCell cell = data[i, j];
-                MazeDataGenerator.MazeCell southBound = data[i - 1, j];
-                MazeDataGenerator.MazeCell westBound = data[i, j - 1];
-                MazeDataGenerator.MazeCell eastBound = data[i, j + 1];
-                MazeDataGenerator.MazeCell northBound = data[i + 1, j];
+                MazeDataParser.MazeCell cell = data[i, j];
+                MazeDataParser.MazeCell southBound = data[i - 1, j];
+                MazeDataParser.MazeCell westBound = data[i, j - 1];
+                MazeDataParser.MazeCell eastBound = data[i, j + 1];
+                MazeDataParser.MazeCell northBound = data[i + 1, j];
 
                 // Build the main wall sections if needed.
                 if (cell.north != 0)
@@ -232,7 +238,17 @@ public class MazeMeshGenerator
 
         maze.RecalculateNormals();
 
-        return maze;
+        var mf = go.AddComponent<MeshFilter>();
+        mf.mesh = maze;
+
+        var mc = go.AddComponent<MeshCollider>();
+        mc.sharedMesh = mf.mesh;
+
+        var mr = go.AddComponent<MeshRenderer>();
+        mr.materials = new Material[7] { floorMaterial, ceilingMaterial, northMaterial, southMaterial, eastMaterial, westMaterial, cornerMaterial };
+
+
+        return go;
     }
 
     private void AddQuad(List<Vector3> verts, ref List<Vector3> newVertices,

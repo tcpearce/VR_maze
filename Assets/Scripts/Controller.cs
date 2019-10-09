@@ -2,10 +2,10 @@
 
 [RequireComponent(typeof(MazeConstructor))]
 
-public class GameController : MonoBehaviour
+public class Controller : MonoBehaviour
 {
-    [SerializeField] private FpsMovement player;
-    [SerializeField] private TextAsset config;
+    public FpsMovement player;
+    public TextAsset config;
 
     private MazeConstructor generator;
 
