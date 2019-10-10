@@ -4,18 +4,8 @@ using UnityEngine.AddressableAssets;
 
 public class StimuliGenerator : MonoBehaviour
 {
-    public float width;
-    public float height;
-    public float wallThickness = 0.2f;
-
+    public MazeDataParser parser;
     public Material vstMaterial;
-
-    public StimuliGenerator()
-    {
-        width = 2.0f;
-        height = 3.0f;
-    }
-
 
     public GameObject AddStimuli(MazeDataParser.MazeStimuli stimuli)
     {
@@ -34,7 +24,7 @@ public class StimuliGenerator : MonoBehaviour
         var triangles = new List<int>();
 
         var offset = new Vector3((float)(stimuli.cell.x - 1), 0, (float)(stimuli.cell.y - 1));
-        var scale = new Vector3(width, height, width);
+        var scale = new Vector3(parser.cellWidth, parser.cellHeight, parser.cellWidth);
         var verts = new List<Vector3>();
         foreach(var vert in stimuli.points)
         {

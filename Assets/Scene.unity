@@ -414,6 +414,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   player: {fileID: 1773131083}
   config: {fileID: 4900000, guid: 186cc1b504be949a5b10d9e1a085f352, type: 3}
+  parser: {fileID: 1625808762}
 --- !u!114 &1625808758
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -453,9 +454,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b3e8ef41698f446e920b583737cf715, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 2
-  height: 3
-  wallThickness: 0.2
+  parser: {fileID: 1625808762}
   vstMaterial: {fileID: 2100000, guid: df0ee7cd11de1466194c2ee2f0406648, type: 2}
 --- !u!114 &1625808761
 MonoBehaviour:
@@ -469,9 +468,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bdae80df1626047f792aa0cd53a56231, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 2
-  height: 3
-  wallThickness: 0.1
   floorMaterial: {fileID: 2100000, guid: 261e9fda392d74b8c84081767db2566e, type: 2}
   ceilingMaterial: {fileID: 2100000, guid: b2dc3a1cd6eae4444b960e7694a30ec8, type: 2}
   northMaterial: {fileID: 2100000, guid: e5ae1d915a6fd460ca3487bb61f669d0, type: 2}
@@ -479,6 +475,7 @@ MonoBehaviour:
   eastMaterial: {fileID: 2100000, guid: e5ae1d915a6fd460ca3487bb61f669d0, type: 2}
   westMaterial: {fileID: 2100000, guid: e5ae1d915a6fd460ca3487bb61f669d0, type: 2}
   cornerMaterial: {fileID: 2100000, guid: e5ae1d915a6fd460ca3487bb61f669d0, type: 2}
+  parser: {fileID: 1625808762}
 --- !u!114 &1625808762
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -491,8 +488,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 656e1087539a749eeae63493c2c1741e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mazeStimuli: []
-  startCell: {x: 0, y: 0}
+  cellWidth: 0
+  cellHeight: 0
+  wallFraction: 0
 --- !u!1 &1773131082
 GameObject:
   m_ObjectHideFlags: 0

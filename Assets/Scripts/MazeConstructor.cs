@@ -7,15 +7,6 @@ public class MazeConstructor : MonoBehaviour
 {
     public bool showDebug;
 
-    public float cellWidth
-    {
-        get; private set;
-    }
-    public float cellHeight
-    {
-        get; private set;
-    }
-
     public Vector2Int StartCell
     {
         get => dataParser.startCell;
@@ -37,10 +28,6 @@ public class MazeConstructor : MonoBehaviour
         DisposeOldMaze();
 
         dataParser.LoadFromFile(config);
-
-        // store values used to generate this mesh
-        cellWidth = meshGenerator.width;
-        cellHeight = meshGenerator.height;
 
         DisplayMaze();
     }

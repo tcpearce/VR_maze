@@ -3,9 +3,6 @@ using UnityEngine;
 
 public class MazeMeshGenerator : MonoBehaviour
 {
-    public float width = 2.0f;
-    public float height = 3.0f;
-    public float wallThickness = 0.1f;
     public Material floorMaterial;
     public Material ceilingMaterial;
     public Material northMaterial;
@@ -13,6 +10,8 @@ public class MazeMeshGenerator : MonoBehaviour
     public Material eastMaterial;
     public Material westMaterial;
     public Material cornerMaterial;
+
+    public MazeDataParser parser;
 
     public GameObject FromData(MazeDataParser.MazeCell[,] data)
     {
@@ -37,31 +36,32 @@ public class MazeMeshGenerator : MonoBehaviour
 
         var rMax = data.GetUpperBound(0);
         var cMax = data.GetUpperBound(1);
-        var cellWidth = width;
-        var halfWallWidth = (width * wallThickness) / 2.0f;
+        var width = parser.cellWidth;
+        var height = parser.cellHeight;
+        var halfWallWidth = (width * parser.wallFraction) / 2.0f;
 
-        var mapOriginX = -2f * cellWidth;
-        var mapOriginY = -2f * cellWidth;
+        var mapOriginX = -2f * width;
+        var mapOriginY = -2f * width;
 
         for (var i = 1; i < rMax; i++)
         {
-            var cellOriginY = i * cellWidth + mapOriginY;
+            var cellOriginY = i * width + mapOriginY;
             var southY = cellOriginY + halfWallWidth;
-            var northY = cellOriginY + (cellWidth - halfWallWidth);
+            var northY = cellOriginY + (width - halfWallWidth);
 
             for (int j = 1; j < cMax; j++)
             {
-                var cellOriginX = j * cellWidth + mapOriginX;
+                var cellOriginX = j * width + mapOriginX;
                 var westX = cellOriginX + halfWallWidth;
-                var eastX = cellOriginX + (cellWidth - halfWallWidth);
+                var eastX = cellOriginX + (width - halfWallWidth);
 
                 // Add the floor
                 AddQuad(new List<Vector3>()
                 {
                     new Vector3(cellOriginX, 0f, cellOriginY),
-                    new Vector3(cellOriginX + cellWidth, 0f, cellOriginY),
-                    new Vector3(cellOriginX + cellWidth, 0f, cellOriginY + cellWidth),
-                    new Vector3(cellOriginX, 0f, cellOriginY + cellWidth),
+                    new Vector3(cellOriginX + width, 0f, cellOriginY),
+                    new Vector3(cellOriginX + width, 0f, cellOriginY + width),
+                    new Vector3(cellOriginX, 0f, cellOriginY + width),
                 },
                 ref newVertices, ref newUVs, ref floorTriangles);
 
@@ -71,9 +71,9 @@ public class MazeMeshGenerator : MonoBehaviour
                     AddQuad(new List<Vector3>()
                     {
                         new Vector3(cellOriginX, height, cellOriginY),
-                        new Vector3(cellOriginX, height, cellOriginY + cellWidth),
-                        new Vector3(cellOriginX + cellWidth, height, cellOriginY + cellWidth),
-                        new Vector3(cellOriginX + cellWidth, height, cellOriginY),
+                        new Vector3(cellOriginX, height, cellOriginY + width),
+                        new Vector3(cellOriginX + width, height, cellOriginY + width),
+                        new Vector3(cellOriginX + width, height, cellOriginY),
                     },
                     ref newVertices, ref newUVs, ref ceilingTriangles);
                 }
@@ -91,8 +91,8 @@ public class MazeMeshGenerator : MonoBehaviour
                     // Build north wall
                     AddQuad(new List<Vector3>() {
                         new Vector3(cellOriginX, 0f, northY),
-                        new Vector3(cellOriginX + cellWidth, 0f, northY),
-                        new Vector3(cellOriginX + cellWidth, height, northY),
+                        new Vector3(cellOriginX + width, 0f, northY),
+                        new Vector3(cellOriginX + width, height, northY),
                         new Vector3(cellOriginX, height, northY)
                     },
                     ref newVertices, ref newUVs, ref northWallTriangles);
@@ -104,8 +104,8 @@ public class MazeMeshGenerator : MonoBehaviour
                     AddQuad(new List<Vector3>() {
                         new Vector3(cellOriginX, 0f, southY),
                         new Vector3(cellOriginX, height, southY),
-                        new Vector3(cellOriginX + cellWidth, height, southY),
-                        new Vector3(cellOriginX + cellWidth, 0f, southY)
+                        new Vector3(cellOriginX + width, height, southY),
+                        new Vector3(cellOriginX + width, 0f, southY)
                     },
                     ref newVertices, ref newUVs, ref southWallTriangles);
                 }
@@ -116,8 +116,8 @@ public class MazeMeshGenerator : MonoBehaviour
                     AddQuad(new List<Vector3>() {
                         new Vector3(eastX, 0f, cellOriginY),
                         new Vector3(eastX, height, cellOriginY),
-                        new Vector3(eastX, height, cellOriginY + cellWidth),
-                        new Vector3(eastX, 0f, cellOriginY + cellWidth)
+                        new Vector3(eastX, height, cellOriginY + width),
+                        new Vector3(eastX, 0f, cellOriginY + width)
                     },
                     ref newVertices, ref newUVs, ref eastWallTriangles);
                 }
@@ -127,8 +127,8 @@ public class MazeMeshGenerator : MonoBehaviour
                     // Build west wall
                     AddQuad(new List<Vector3>() {
                         new Vector3(westX, 0f, cellOriginY),
-                        new Vector3(westX, 0f, cellOriginY + cellWidth),
-                        new Vector3(westX, height, cellOriginY + cellWidth),
+                        new Vector3(westX, 0f, cellOriginY + width),
+                        new Vector3(westX, height, cellOriginY + width),
                         new Vector3(westX, height, cellOriginY)
                     },
                     ref newVertices, ref newUVs, ref eastWallTriangles);
@@ -149,10 +149,10 @@ public class MazeMeshGenerator : MonoBehaviour
 
                     // Build west wall in-fill
                     AddQuad(new List<Vector3>() {
-                        new Vector3(westX, 0f, cellOriginY + (cellWidth - halfWallWidth)),
-                        new Vector3(westX, 0f, cellOriginY + cellWidth),
-                        new Vector3(westX, height, cellOriginY + cellWidth),
-                        new Vector3(westX, height, cellOriginY + (cellWidth - halfWallWidth))
+                        new Vector3(westX, 0f, cellOriginY + (width - halfWallWidth)),
+                        new Vector3(westX, 0f, cellOriginY + width),
+                        new Vector3(westX, height, cellOriginY + width),
+                        new Vector3(westX, height, cellOriginY + (width - halfWallWidth))
                     },
                     ref newVertices, ref newUVs, ref eastWallTriangles);
                 }
@@ -162,19 +162,19 @@ public class MazeMeshGenerator : MonoBehaviour
                 {
                     // Build north wall in-fill
                     AddQuad(new List<Vector3>() {
-                        new Vector3(cellOriginX + (cellWidth - halfWallWidth), 0f, northY),
-                        new Vector3(cellOriginX + cellWidth, 0f, northY),
-                        new Vector3(cellOriginX + cellWidth, height, northY),
-                        new Vector3(cellOriginX + (cellWidth - halfWallWidth), height, northY)
+                        new Vector3(cellOriginX + (width - halfWallWidth), 0f, northY),
+                        new Vector3(cellOriginX + width, 0f, northY),
+                        new Vector3(cellOriginX + width, height, northY),
+                        new Vector3(cellOriginX + (width - halfWallWidth), height, northY)
                     },
                     ref newVertices, ref newUVs, ref northWallTriangles);
 
                     // Build east wall in-fill
                     AddQuad(new List<Vector3>() {
-                        new Vector3(eastX, 0f, cellOriginY + (cellWidth - halfWallWidth)),
-                        new Vector3(eastX, height, cellOriginY + (cellWidth - halfWallWidth)),
-                        new Vector3(eastX, height, cellOriginY + cellWidth),
-                        new Vector3(eastX, 0f, cellOriginY + cellWidth)
+                        new Vector3(eastX, 0f, cellOriginY + (width - halfWallWidth)),
+                        new Vector3(eastX, height, cellOriginY + (width - halfWallWidth)),
+                        new Vector3(eastX, height, cellOriginY + width),
+                        new Vector3(eastX, 0f, cellOriginY + width)
                     },
                     ref newVertices, ref newUVs, ref eastWallTriangles);
                 }
@@ -184,10 +184,10 @@ public class MazeMeshGenerator : MonoBehaviour
                 {
                     // Build south wall in-fill
                     AddQuad(new List<Vector3>() {
-                        new Vector3(cellOriginX + (cellWidth - halfWallWidth), 0f, southY),
-                        new Vector3(cellOriginX + (cellWidth - halfWallWidth), height, southY),
-                        new Vector3(cellOriginX + cellWidth, height, southY),
-                        new Vector3(cellOriginX + cellWidth, 0f, southY)
+                        new Vector3(cellOriginX + (width - halfWallWidth), 0f, southY),
+                        new Vector3(cellOriginX + (width - halfWallWidth), height, southY),
+                        new Vector3(cellOriginX + width, height, southY),
+                        new Vector3(cellOriginX + width, 0f, southY)
                     },
                     ref newVertices, ref newUVs, ref southWallTriangles);
 

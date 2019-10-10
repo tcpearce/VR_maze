@@ -43,6 +43,10 @@ public class MazeDataParser : MonoBehaviour
     [NonSerialized]
     public List<MazeStimuli> mazeStimuli = new List<MazeStimuli>();
 
+    public float cellWidth;
+    public float cellHeight;
+    public float wallFraction;
+
     [NonSerialized]
     public Vector2Int startCell;
 
@@ -74,6 +78,10 @@ public class MazeDataParser : MonoBehaviour
         var mapConfig = JsonUtility.FromJson<MazeMapConfig>(string.Join("\n", mapConfigLines));
         int sizeCols = mapConfig.width;
         int sizeRows = mapConfig.height;
+
+        cellWidth = mapConfig.cellWidth;
+        cellHeight = mapConfig.cellHeight;
+        wallFraction = mapConfig.wallFraction;
 
 
         mazeCells = new MazeCell[sizeRows + 4, sizeCols + 4];
